@@ -6,7 +6,7 @@ import asyncio
 import os
 from fastmcp import Client
 
-MCP_SERVER_URL = "https://your-render-url.onrender.com/mcp"
+MCP_SERVER_URL = "https://medibot-mcp-remote.onrender.com/mcp"
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
