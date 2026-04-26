@@ -1,0 +1,7 @@
+fastmcp
+openai
+groq
+streamlit
+requests
+python-dotenv
+pillow
