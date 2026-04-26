@@ -4,13 +4,10 @@ import requests
 import json
 import asyncio
 import os
-from dotenv import load_dotenv
 from fastmcp import Client
 
-load_dotenv()
-
-MCP_SERVER_URL = "https://medibot-mcp-remote.onrender.com/mcp"
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+MCP_SERVER_URL = "https://your-render-url.onrender.com/mcp"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
@@ -95,6 +92,10 @@ def decide_and_run(user_input):
     )
 
     data = response.json()
+
+    if "choices" not in data:
+        return f"Groq API Error: {data}"
+
     choice = data["choices"][0]
     message = choice["message"]
     finish_reason = choice["finish_reason"]
@@ -139,6 +140,11 @@ def decide_and_run(user_input):
             })
         )
 
-        return final_response.json()["choices"][0]["message"]["content"]
+        final_data = final_response.json()
+
+        if "choices" not in final_data:
+            return f"Groq Final Response Error: {final_data}"
+
+        return final_data["choices"][0]["message"]["content"]
 
     return message.get("content", "No response")
