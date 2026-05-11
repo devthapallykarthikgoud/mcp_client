@@ -5,4 +5,4 @@ requests
 python-dotenv
 pillow
 gtts
-googletrans==4.0.0rc1
+deep-translator
