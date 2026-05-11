@@ -10,7 +10,22 @@ st.set_page_config(
     page_title="MediBot MCP",
     page_icon="🩺"
 )
+with open("background.png", "rb") as file:
+    bg_image = base64.b64encode(file.read()).decode()
 
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/jpg;base64,{bg_image}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 st.title("🩺 MediBot MCP")
 st.caption("AI Medical Assistant using FastMCP + Groq")
 
