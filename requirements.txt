@@ -1,5 +1,4 @@
 fastmcp
-openai
 groq
 streamlit
 requests
