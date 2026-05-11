@@ -26,10 +26,21 @@ st.set_page_config(
 )
 
 # =========================================================
+# SESSION STATE
+# =========================================================
+
+if "symptom_result" not in st.session_state:
+    st.session_state.symptom_result = ""
+
+if "photo_result" not in st.session_state:
+    st.session_state.photo_result = ""
+
+# =========================================================
 # BACKGROUND IMAGE
 # =========================================================
 
 with open("background.png", "rb") as file:
+
     bg_image = base64.b64encode(
         file.read()
     ).decode()
@@ -46,7 +57,7 @@ st.markdown(
     }}
 
     .result-box {{
-        background: rgba(0,0,0,0.70);
+        background: rgba(0,0,0,0.72);
         padding: 20px;
         border-radius: 15px;
         color: white;
@@ -64,41 +75,55 @@ st.markdown(
 
 def translate_text(text, language):
 
-    if language == "Telugu":
+    try:
 
-        translated = GoogleTranslator(
-            source="auto",
-            target="te"
-        ).translate(text)
+        if language == "Telugu":
 
-        return translated
+            translated = GoogleTranslator(
+                source="auto",
+                target="te"
+            ).translate(text)
 
-    return text
+            return translated
+
+        return text
+
+    except Exception:
+
+        return text
 
 
 def speak_text(text, lang_code):
 
-    tts = gTTS(
-        text=text,
-        lang=lang_code
-    )
+    try:
 
-    temp_audio = tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=".mp3"
-    )
+        tts = gTTS(
+            text=text,
+            lang=lang_code
+        )
 
-    tts.save(temp_audio.name)
+        temp_audio = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".mp3"
+        )
 
-    audio_bytes = open(
-        temp_audio.name,
-        "rb"
-    ).read()
+        tts.save(temp_audio.name)
 
-    st.audio(
-        audio_bytes,
-        format="audio/mp3"
-    )
+        audio_bytes = open(
+            temp_audio.name,
+            "rb"
+        ).read()
+
+        st.audio(
+            audio_bytes,
+            format="audio/mp3"
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Speech Error: {str(e)}"
+        )
 
 # =========================================================
 # HEADER
@@ -127,61 +152,89 @@ with tab1:
         placeholder="Example: fever, headache, sore throat for 2 days"
     )
 
-    if st.button("Analyze Symptoms"):
+    # =========================================
+    # ANALYZE BUTTON
+    # =========================================
+
+    if st.button(
+        "Analyze Symptoms"
+    ):
 
         if symptoms.strip():
 
-            with st.spinner("Analyzing symptoms..."):
+            with st.spinner(
+                "Analyzing symptoms..."
+            ):
 
-                result = decide_and_run(
-                    f"I have these symptoms: {symptoms}"
-                )
+                try:
 
-                st.markdown(
-                    f"""
-                    <div class="result-box">
-                    {result}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                # =========================================
-                # SPEAKER BUTTON
-                # =========================================
-
-                if st.button(
-                    "🔊",
-                    key="speak_symptoms"
-                ):
-
-                    language = st.radio(
-                        "Select Voice Language",
-                        ["English", "Telugu"],
-                        horizontal=True,
-                        key="lang1"
+                    result = decide_and_run(
+                        f"I have these symptoms: {symptoms}"
                     )
 
-                    translated_text = translate_text(
-                        result,
-                        language
-                    )
+                    st.session_state.symptom_result = result
 
-                    lang_code = (
-                        "te"
-                        if language == "Telugu"
-                        else "en"
-                    )
+                except Exception as e:
 
-                    speak_text(
-                        translated_text,
-                        lang_code
+                    st.error(
+                        f"Error: {str(e)}"
                     )
 
         else:
 
             st.error(
                 "Please enter your symptoms"
+            )
+
+    # =========================================
+    # SHOW RESULT
+    # =========================================
+
+    if st.session_state.symptom_result:
+
+        st.markdown(
+            f"""
+            <div class="result-box">
+            {st.session_state.symptom_result}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # =====================================
+        # LANGUAGE SELECTOR
+        # =====================================
+
+        language1 = st.radio(
+            "Voice Language",
+            ["English", "Telugu"],
+            horizontal=True,
+            key="lang1"
+        )
+
+        # =====================================
+        # SPEAKER BUTTON
+        # =====================================
+
+        if st.button(
+            "🔊 Speak",
+            key="speak_symptom"
+        ):
+
+            translated_text = translate_text(
+                st.session_state.symptom_result,
+                language1
+            )
+
+            lang_code = (
+                "te"
+                if language1 == "Telugu"
+                else "en"
+            )
+
+            speak_text(
+                translated_text,
+                lang_code
             )
 
 # =========================================================
@@ -195,6 +248,10 @@ with tab2:
         type=["jpg", "jpeg", "png"]
     )
 
+    # =========================================
+    # IMAGE PREVIEW
+    # =========================================
+
     if photo:
 
         st.image(
@@ -202,13 +259,19 @@ with tab2:
             width=250
         )
 
-        if st.button(
-            "Analyze Medicine Photo"
+    # =========================================
+    # ANALYZE PHOTO
+    # =========================================
+
+    if photo and st.button(
+        "Analyze Medicine Photo"
+    ):
+
+        with st.spinner(
+            "Analyzing medicine image..."
         ):
 
-            with st.spinner(
-                "Analyzing medicine image..."
-            ):
+            try:
 
                 image_b64 = base64.b64encode(
                     photo.read()
@@ -223,43 +286,61 @@ with tab2:
                     )
                 )
 
-                st.markdown(
-                    f"""
-                    <div class="result-box">
-                    {result}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                st.session_state.photo_result = result
+
+            except Exception as e:
+
+                st.error(
+                    f"Error: {str(e)}"
                 )
 
-                # =========================================
-                # SPEAKER BUTTON
-                # =========================================
+    # =========================================
+    # SHOW PHOTO RESULT
+    # =========================================
 
-                if st.button(
-                    "🔊",
-                    key="speak_photo"
-                ):
+    if st.session_state.photo_result:
 
-                    language = st.radio(
-                        "Select Voice Language",
-                        ["English", "Telugu"],
-                        horizontal=True,
-                        key="lang2"
-                    )
+        st.markdown(
+            f"""
+            <div class="result-box">
+            {st.session_state.photo_result}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-                    translated_text = translate_text(
-                        result,
-                        language
-                    )
+        # =====================================
+        # LANGUAGE SELECTOR
+        # =====================================
 
-                    lang_code = (
-                        "te"
-                        if language == "Telugu"
-                        else "en"
-                    )
+        language2 = st.radio(
+            "Voice Language",
+            ["English", "Telugu"],
+            horizontal=True,
+            key="lang2"
+        )
 
-                    speak_text(
-                        translated_text,
-                        lang_code
-                    )
+        # =====================================
+        # SPEAK BUTTON
+        # =====================================
+
+        if st.button(
+            "🔊 Speak",
+            key="speak_photo"
+        ):
+
+            translated_text = translate_text(
+                st.session_state.photo_result,
+                language2
+            )
+
+            lang_code = (
+                "te"
+                if language2 == "Telugu"
+                else "en"
+            )
+
+            speak_text(
+                translated_text,
+                lang_code
+            )
